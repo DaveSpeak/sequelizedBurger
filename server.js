@@ -11,7 +11,7 @@ var BurgerSqlze=require('./models')['BurgerSqlze'];
 console.log(BurgerSqlze);
 BurgerSqlze.sync();
 var app = express();
-var PORT = process.env.PORT || 8080;
+var PORT = process.env.PORT || 3306;
 app.use(express.static(process.cwd() + '/public'));
 
 // use body parser to parse urlencoded objects only
