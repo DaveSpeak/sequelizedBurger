@@ -18,6 +18,7 @@
     "password": "gcii01eo5kos7n7i",
     "database": "o8tyedykm3ewftjj",
     "host": "z37udk8g6jiaqcbx.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
+    "port":3306,
     "dialect": "mysql",
     "use_env_variable": "DATABASE_URL"
   }
