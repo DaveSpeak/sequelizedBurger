@@ -13,7 +13,7 @@ CREATE TABLE burgers
 	PRIMARY KEY (id)
 );
 
-CREATE TABLE customers
+CREATE TABLE Customers
 (
 	id int NOT NULL AUTO_INCREMENT,
 	name varchar(255) NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE customers
 	PRIMARY KEY (id)
 );
 
-CREATE TABLE customerburgers
+CREATE TABLE CustomerBurgers
 (
 	id int NOT NULL AUTO_INCREMENT,
 	BurgerSqlzeID INTEGER NOT NULL,
