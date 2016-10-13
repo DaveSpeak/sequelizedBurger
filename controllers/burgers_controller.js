@@ -1,99 +1,180 @@
-// This code was taken from the cats app and modified
-// require express and string npm packages
-// and burger.js links to the orm
+// require express and string npm packages,
+// BurgerSqlze and Customer models
 var express = require('express');
 var router = express.Router();
-// var burger = require('../models/burger.js');
 var BurgerSqlze=require('../models')['BurgerSqlze'];
+var Customer=require('../models')['Customer'];
 var string = require('string');
+// Global variables: counter - to step thru burger array,
+// assocArray - to hold burger/customer associations
+var counter=0;
+var assocArray=[];
 
 // redirects host '/' entry to '/burgers'
 router.get('/', function (req, res) {
 	res.redirect('/burgers');
 });
 
-// on host '/burgers' load, accesses burger.all function
-// which returns all rows of the 'burgers' table
+// on host '/burgers' load, accesses BurgerSqlze 'findAll'
+// to return object with all burgers in the BurgerSqlze table
 router.get('/burgers', function (req, res) {
+	// object to hold burgers and associated customers
 	var renderObj =[];
-	BurgerSqlze.findAll({
+	// sequelize function to return object with all burgers
+	return BurgerSqlze.findAll({
 		where:{}
+	// process results
 	}).then(function(result){
-		for (var i=0;i<result.length;i++){
-			var RowDataPacket=result[i].dataValues;
-			var lastEat=RowDataPacket.updatedAt;
-			var firstEat=RowDataPacket.createdAt;
-			RowDataPacket.updatedAt=string(lastEat).left(16).s;
-			RowDataPacket.createdAt=string(firstEat).left(16).s;
-			renderObj.push(RowDataPacket);
-		}
-		var passObj={burgers:renderObj};
-		res.render('index', passObj);
+		// reset counter and associativity arrray
+		counter=0;
+		assocArray=[];
+		// if the returned array is empty pass in a dummy object and return
+		if (result.length <=0){
+			var passObj='';
+			return false;
+		// if there is data in the array, begin recursion to access all associativity data
+		} else {
+			// call function 'findAssoc' which executes recursion
+			return findAssoc(result)
+				// on return truncate date data and push onto array 'renderObj' for rendering
+				.then(function (assoc){
+						for (var i=0;i<result.length;i++){
+							var RowDataPacket=result[i].dataValues;
+							var lastEat=RowDataPacket.updatedAt;
+							var firstEat=RowDataPacket.createdAt;
+							RowDataPacket.updatedAt=string(lastEat).left(16).s;
+							RowDataPacket.createdAt=string(firstEat).left(16).s;
+							RowDataPacket.lastEatenBy=assoc[i];
+							renderObj.push(RowDataPacket);
+						}
+				});
+				return true;
+			}
+		// pass data object to handlebars index to render the webpage
+		}).then (function(){
+			var passObj={burgers:renderObj};
+			res.render('index', passObj);
+		});
 	});
-	// burger.all(function (data) {
-	// 	// hbsObject holds burgers data for rendering
-	// 	var hbsObject = { burgers: data };
-	// 	// loop thru object and truncate first entry timestamp
-	// 	// and 'last eaten' timestamp
-	// 	for (var i=0;i<data.length;i++){
-	// 		var lastEat=hbsObject.burgers[i].tslast;
-	// 		var firstEat=hbsObject.burgers[i].tsinit;
-	// 		hbsObject.burgers[i].tslast=string(lastEat).left(16).s;
-	// 		hbsObject.burgers[i].tsinit=string(firstEat).left(16).s;
-	// 	}
-	// 	// render hbsObject to the host using the 'index.handlebars' template
-	// 	res.render('index', hbsObject);
-	// });
-});
+// Recursive function to step thru burger array, find associations and return an array
+// of customers associated with the id of the burger. This will render the name of the
+// last customer to eat the burger when the burger appears in the 'Burgers eaten' 
+// section of the website.
+function findAssoc(array){
+	// if all burgers have been processed, exit recursion
+	if (counter<array.length){
+		// find burger with the id of 'counter' in the table
+		return BurgerSqlze.findOne({where: {id:array[counter].id}})
+			.then (function(search){
+				// get associated customers (sequelize created command)
+				return search.getCustomers()
+					.then(function(customers){
+						// increment counter, push customer's name to associativity array
+						// if the customer name string is empty (user has hit the 'Devour It!'
+						// button without entering a name), add "No One" as the last eater
+						counter+=1;
+						if (customers!=''){
+							if (customers[(customers.length-1)].name==''){
+								assocArray.push('"No One"');
+							} else {
+								assocArray.push(customers[(customers.length-1)].name);
+							}
+						}
+						// recursively call the array with the burgers array passed in on
+						// initial call
+						return findAssoc(array);
+					});
+			});
+	} else {
+		// processing done - return the associativity array
+		return assocArray;
+		
+	}
+}
 
-// post new row to 'burgers' table 
+// create new burgers row in the BurgerSqlze table 
 router.post('/burgers/create', function (req, res) {
-	// var newburg=req.body;
+	// set the name and the burger as not-eaten
 	var postburg=req.body;
 	postburg.eaten=false;
-	BurgerSqlze.create(postburg).then(function(){res.redirect('/burgers')});
-	// use 'burger' connection to orm to access database to create a new entry
-	// give the name (req.body.name), and set it's value to 'false'- which means not eaten
-	// burger.create(['name', 'eaten'], [req.body.name, false], function () {
-	// 	//redirect to the main display page
-	// 	res.redirect('/burgers');
-	// });
+			// check if there is already a burger with that name
+			return BurgerSqlze.findOne({
+				where: {
+					name:postburg.name
+				}
+			// if the burger doesn't exist, create it
+			}).then (function(exists){
+				if (exists==undefined){
+					return BurgerSqlze.create(postburg).then(function(){res.redirect('/burgers')});
+				}else {
+					// if the bureger does exist - re-render the page.
+					res.redirect('/burgers');
+				}
+			});
 });
 
-// update information in a row in the 'burgers' table
+
+// change the burger status from 'eaten' to 'not eaten' and vice-versa
 router.post('/burgers/update/:id', function (req, res) {
-	BurgerSqlze.findOne({
+	// find the burger using sequelize
+	return BurgerSqlze.findOne({
 		where: {
 			id:req.params.id
 		}
 	}).then(function(result){
-		result.updateAttributes({
-		eaten:req.body.eaten
-		}).then(res.redirect('/burgers'));
+		// update it with the values passed from the webpage.
+		return result.updateAttributes({
+		 eaten:req.body.eaten
+		}).then(function(){
+			// Check if the customer name has already been used
+			return Customer.findOne({
+				where: {
+					name:req.body.customer
+				}
+			})
+		}).then(function(cname){
+					// if customer name doesn't exist, create it
+					if (cname==undefined){
+						return Customer.create({name:req.body.customer})
+						.then (function(customer){
+							// associate new customer and burger on the 'customerburgers' table:
+							return customer.addBurgerSqlze(req.params.id).then(res.redirect('/burgers'));
+						}) 
+					// associate old customer name with burger on the 'customerburgers' table:
+					} else {return cname.addBurgerSqlze(req.params.id).then(res.redirect('/burgers'));}
+		});
 	});
-
-// 	// set up the identifier for the row
-// 	var identifier = 'id = ' + req.params.id;
-// 	// update the entry using the 'burger' connection to the orm
-// 	burger.update({ eaten: req.body.eaten }, identifier, function () {
-// 		// redirect to the main display page
-// 		res.redirect('/burgers');
-// 	});
+});
+// return burger to the 'Burgers to eat:' side of the webpage
+router.post('/burgers/reup/:id', function (req, res) {
+	// Find the burger
+	return BurgerSqlze.findOne({
+		where: {
+			id:req.params.id
+		}
+	}).then(function(result){
+		// update the state of the burger from 'eaten' to 'not eaten' - passed from webpage
+		return result.updateAttributes({
+		eaten:req.body.eaten
+		// return the customer object and render the 'index' page
+		}).then(function(result){
+			 return Customer.findOne({
+				where: {
+					name:req.body.customer
+				}
+			})
+			}).then(res.redirect('/burgers'));
+	});
 });
 
-// // clear all entries in the 'burgers' table
+// // clear all entries in the 'BurgerSqlze' table
 router.post('/burgers/delete/', function (req, res) {
-	// access the orm thru the 'burger' object
+	// 'destroy' all entries, truncate the dataset and render the page
 	BurgerSqlze.destroy({
 		truncate:true
 	}).then(function(result){
 		res.redirect('/burgers');
 	});
-	// 	console.log("AFter the delete is done "+result);
-	// 	BurgerSqlze.updateAttributes({
-	// 		autoIncrementID:1
-	// 	}).then(res.redirect('/burgers'));
-	// });
 });
 
 

@@ -1,25 +1,23 @@
 'use strict';
 module.exports = function(sequelize, DataTypes) {
-  var BurgerSqlze = sequelize.define('BurgerSqlze', {
+  var CustomerBurgers = sequelize.define('CustomerBurgers', {
     id: {
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true
     },
-    name: {
-      type:DataTypes.STRING
+    BurgerSqlzeId: {
+      type:DataTypes.INTEGER
     },
-    eaten: {
-      type:DataTypes.BOOLEAN,
-       defaultValue:false
-     }
+    CustomerId: {
+      type:DataTypes.INTEGER
+    }
   }, {
     classMethods: {
       associate: function(models) {
-        BurgerSqlze.belongsToMany(models.Customer,{through: models.CustomerBurgers});
         // associations can be defined here
       }
     }
   });
-  return BurgerSqlze;
+  return CustomerBurgers;
 };

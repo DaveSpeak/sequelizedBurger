@@ -1,14 +1,13 @@
 # burger
-node.js burger app
+node.js Burger sequelized app
 npm dependencies in package.json:
 	body-parser
 	express
 	express-handlebars
-	method-override
 	mysql
 	string
 
 entry point: server.js
-Runs locally on port 3000, local mysql db:burger_db
-Runs on Heroku using jawsdb: ux148xumrt740ou0
-Heroku deployment: http://shielded-meadow-89831.herokuapp.com/burgers
+Runs locally on port 8080, local mysql db:burger_db
+Runs on Heroku using jawsdb: o8tyedykm3ewftjj
+Heroku deployment: http://fierce-cove-28382.herokuapp.com/burgers

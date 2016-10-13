@@ -1,24 +1,22 @@
 'use strict';
 module.exports = {
   up: function(queryInterface, Sequelize) {
-    return queryInterface.createTable('BurgerSqlzes', {
+    return queryInterface.createTable('CustomerBurgers', {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER
       },
-      name: {
-        type: Sequelize.STRING
+      BurgerSqlzeId: {
+        allowNull: false,
+        primaryKey: true,
+        type: Sequelize.INTEGER
       },
-      eaten: {
-        type: Sequelize.BOOLEAN
-      },
-      tsinit: {
-        type: Sequelize.DATE
-      },
-      tslast: {
-        type: Sequelize.DATE
+      CustomerId: {
+        allowNull: false,
+        primaryKey: true,
+        type: Sequelize.INTEGER
       },
       createdAt: {
         allowNull: false,
@@ -31,6 +29,6 @@ module.exports = {
     });
   },
   down: function(queryInterface, Sequelize) {
-    return queryInterface.dropTable('BurgerSqlzes');
+    return queryInterface.dropTable('CustomerBurgers');
   }
 };
